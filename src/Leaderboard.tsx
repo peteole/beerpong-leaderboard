@@ -2,6 +2,8 @@ import { useEffect, useReducer, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "./client";
 import { Button, Input, Loading, Table, Tooltip } from "@nextui-org/react";
+import { TagPicker } from 'rsuite';
+import "./leaderboard.css"
 
 function PlayerSelector({ players, onChange, label }: { players: Player[], onChange: (player: number) => void, label: string }) {
     return (
@@ -18,7 +20,7 @@ function PlayerSelector({ players, onChange, label }: { players: Player[], onCha
     )
 }
 type Player = { name: string, id: number }
-type Match = { winner1: Player, winner2: Player, loser1: Player, loser2: Player, inserted_at: string, id: number }
+type Match = { winners: number[], losers: number[], inserted_at: string, id: number }
 
 export default function Leaderboard() {
     const [players, setPlayers] = useState<Player[]>([])
@@ -31,33 +33,26 @@ export default function Leaderboard() {
         return s + 1
     }, 0)
 
+    const [winners, setWinners] = useState<number[]>([])
+    const [losers, setLosers] = useState<number[]>([])
 
 
     useEffect(() => {
         supabase.from<{ name: string, players: Player[], matches: Match[], id: number }>('leaderboards').select(`
             name,
             players(name,id),
-            matches(winner1(name,id),winner2(name,id),loser1(name,id),loser2(name,id),id,inserted_at)
+            matches(winners,losers,id,inserted_at)
         `).eq('id', id).then(leaderboard => {
             console.log(leaderboard)
             if (!leaderboard?.data?.length) return
             setName(leaderboard.data[0].name)
             setPlayers(leaderboard.data[0].players)
             setMatches(leaderboard.data[0].matches)
-            setWinner1(leaderboard.data[0].players[0].id)
-            setWinner2(leaderboard.data[0].players[0].id)
-            setLoser1(leaderboard.data[0].players[0].id)
-            setLoser2(leaderboard.data[0].players[0].id)
             setIsLoading(false)
             //setPlayers(leaderboard?.data)
         })
     }, [version])
 
-
-    const [winner1, setWinner1] = useState(1)
-    const [winner2, setWinner2] = useState(1)
-    const [loser1, setLoser1] = useState(1)
-    const [loser2, setLoser2] = useState(1)
     if (isLoading)
         return <Loading size="md" />
     const scores = new Map<number, number>(players.map(p => [p.id, 1000]))
@@ -67,24 +62,25 @@ export default function Leaderboard() {
     //console.log(scores)
     for (const match of matches) {
         //console.log(match)
-        const winner1Score = scores.get(match.winner1.id) || 1000
-        const winner2Score = scores.get(match.winner2.id) || 1000
-        const loser1Score = scores.get(match.loser1.id) || 1000
-        const loser2Score = scores.get(match.loser2.id) || 1000
-        const scoreDiff = ((winner1Score - loser1Score) + (winner2Score - loser2Score)) / 2
-        const winProbability = 1 / (1 + Math.pow(10, -scoreDiff / 400))
+        const winnerScores = match.winners.map(w => scores.get(w) || 1000)
+        const loserScores = match.losers.map(l => scores.get(l) || 1000)
+        const averageWinnerScore = winnerScores.reduce((a, b) => a + b, 0) / winnerScores.length
+        const averageLoserScore = loserScores.reduce((a, b) => a + b, 0) / loserScores.length
+        const winProbability = 1 / (1 + Math.pow(10, (averageLoserScore - averageWinnerScore) / 400))
         const update = 30 * (1 - winProbability)
         matchScores.push(update)
-        scores.set(match.winner1.id, winner1Score + update)
-        scores.set(match.winner2.id, winner2Score + update)
-        scores.set(match.loser1.id, loser1Score - update)
-        scores.set(match.loser2.id, loser2Score - update)
+        for (const i in match.winners) {
+            scores.set(match.winners[i], winnerScores[i] + update)
+        }
+        for (const i in match.losers) {
+            scores.set(match.losers[i], loserScores[i] - update)
+        }
     }
 
     players.sort((a, b) => (scores.get(b.id) || 1000) - (scores.get(a.id) || 1000))
 
     return (
-        <div>
+        <div style={{ textAlign: "center" }} className="leaderboard">
             <h1>Leaderboard {name}</h1>
             <h2>Players:</h2>
             <Table
@@ -121,30 +117,39 @@ export default function Leaderboard() {
                     ))}
                 </Table.Body>
             </Table>
+            <h2>Add player</h2>
             <p>
                 <Input onChange={e => setPlayerName(e.target.value)} placeholder="New player name" />
-                <Button onClick={async () => {
+
+            </p>
+            <Button
+                style={{ margin: "auto" }}
+                onClick={async () => {
                     await supabase.from("players").insert({ name: playerName, leaderboard: id })
                     increase()
                 }}>Add Player</Button>
+            <h2>Add match result</h2>
+            <p>Winners: <TagPicker
+                onChange={(v: string[]) => setWinners(v.map(v => parseInt(v)))}
+                data={players.map(p => ({ label: p.name, value: p.id }))}
+            />
             </p>
-            <h2>Add match</h2>
-            <PlayerSelector label={"winner1 "} players={players} onChange={e => setWinner1(e)} />
-            <PlayerSelector label={"winner2 "} players={players} onChange={e => setWinner2(e)} />
-            <PlayerSelector label={"loser1 "} players={players} onChange={e => setLoser1(e)} />
-            <PlayerSelector label={"loser2 "} players={players} onChange={e => setLoser2(e)} />
-            <button onClick={async () => {
-                await supabase.from("matches").insert({
-                    winner1: winner1,
-                    winner2: winner2,
-                    loser1: loser1,
-                    loser2: loser2,
-                    leaderboard: id
-                }
-                )
-                increase()
-            }}>Add match</button>
-            <h2>Matches</h2>
+            <p>Losers: <TagPicker
+                onChange={(v: string[]) => setLosers(v.map(v => parseInt(v)))}
+                data={players.map(p => ({ label: p.name, value: p.id }))}
+            />
+            </p>
+            <Button
+                style={{ margin: "auto" }} onClick={async () => {
+                    await supabase.from("matches").insert({
+                        winners: winners,
+                        losers: losers,
+                        leaderboard: id
+                    }
+                    )
+                    increase()
+                }}>Add match</Button>
+            <h2 style={{marginTop:50}}>Matches</h2>
             <Table
                 aria-label="Example table with static content"
                 css={{
@@ -161,16 +166,17 @@ export default function Leaderboard() {
                 <Table.Body>
                     {matches.map((match, i) => (
                         <Table.Row>
-                            <Table.Cell>{match.winner1.name}, {match.winner2.name}</Table.Cell>
-                            <Table.Cell>{match.loser1.name}, {match.loser2.name}</Table.Cell>
+                            <Table.Cell>{match.winners.map(w => players.find(p => p.id == w)?.name).join(", ")}</Table.Cell>
+                            <Table.Cell>{match.losers.map(w => players.find(p => p.id == w)?.name).join(", ")}</Table.Cell>
                             <Table.Cell>{match.inserted_at.toLocaleDateString()}</Table.Cell>
-                            <Table.Cell>{Math.round(matchScores[i])}</Table.Cell>
+                            <Table.Cell>±{Math.round(matchScores[i])}</Table.Cell>
                             <Table.Cell>
                                 <Tooltip
                                     content="Delete match"
                                     color="error"
                                     onClick={async () => {
                                         await supabase.from('matches').delete().eq('id', match.id)
+                                        increase()
                                     }}
                                 >
                                     <IconButton>
