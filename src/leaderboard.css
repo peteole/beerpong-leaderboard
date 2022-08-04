@@ -1,4 +1,7 @@
 div.leaderboard>*{
     margin: 20px;
-    
+
+}
+div.rs-picker-menu{
+    z-index: 1000;
 }
