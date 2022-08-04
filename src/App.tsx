@@ -4,7 +4,7 @@ import './App.css'
 import Auth from './Auth'
 import Account from './Account'
 import { supabase } from './client'
-import {  Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Routes,
   Route,
@@ -29,17 +29,16 @@ export default function App() {
           borderBottom: "solid 1px",
           paddingBottom: "1rem",
         }}>
-        <Link to="/">Home </Link>
-        <Link to="/auth">Auth</Link>
+        <p><Link to="/">Home</Link> | <Link to="/auth">Login</Link></p>
       </nav>
       <Routes>
         <Route path="auth" element={!session ? <Auth /> : <Account key={session?.user?.id} session={session} />} />
         <Route path="/leaderboards"  >
           <Route path=":id" element={<Leaderboard />} />
         </Route>
-        <Route path="*" element={<Home/>} />
+        <Route path="*" element={<Home />} />
       </Routes>
-  
+
     </div>
   )
 }

@@ -14,10 +14,10 @@ export default function Home() {
     }, [])
     return (
         <div>
-            <p>Leaderboards</p>
+            <h1>Leaderboards</h1>
             {
                 leaderboards.map(l => {
-                    return <Link to={`/leaderboards/${l.id}`}>{l.name}</Link>
+                    return <p><Link to={`/leaderboards/${l.id}`}>{l.name}</Link></p>
                 }
                 )
             }
