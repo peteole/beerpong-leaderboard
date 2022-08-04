@@ -13,7 +13,7 @@ import Leaderboard from './Leaderboard'
 import Home from './Home'
 
 export default function App() {
-  const [session, setSession] = useState(null)
+  const [session, setSession] = useState(supabase?.auth?.session())
 
   useEffect(() => {
     setSession(supabase?.auth?.session())
@@ -33,7 +33,7 @@ export default function App() {
         <Link to="/auth">Auth</Link>
       </nav>
       <Routes>
-        <Route path="auth" element={!session ? <Auth /> : <Account key={session.user.id} session={session} />} />
+        <Route path="auth" element={!session ? <Auth /> : <Account key={session?.user?.id} session={session} />} />
         <Route path="/leaderboards"  >
           <Route path=":id" element={<Leaderboard />} />
         </Route>

@@ -3,12 +3,13 @@ import { supabase } from "./client"
 import { Outlet, Link } from "react-router-dom";
 
 export default function Home() {
-    const [leaderboards, setLeaderboards] = useState([])
+    const [leaderboards, setLeaderboards] = useState<{ id: number, name: string }[]>([])
     const [leaderboardName, setLeaderboardName] = useState("")
     useEffect(() => {
-        supabase.from("leaderboards").select("*").then(leaderboards => {
+        supabase.from<{ id: number, name: string }>("leaderboards").select("*").then(leaderboards => {
             console.log(leaderboards)
-            setLeaderboards(leaderboards?.data)
+            if (!leaderboards?.data?.length) return
+            setLeaderboards(leaderboards.data)
         })
     }, [])
     return (
@@ -22,7 +23,7 @@ export default function Home() {
             }
             <h2>Create leaderboard</h2>
             <input onChange={e => setLeaderboardName(e.target.value)} />
-            <button onClick={async() => {
+            <button onClick={async () => {
                 await supabase.from("leaderboards").insert({ name: leaderboardName })
             }
             }>Create</button>

@@ -1,9 +1,10 @@
+import { Session } from '@supabase/supabase-js'
 import { useState, useEffect } from 'react'
 import { supabase } from './client'
 
-const Account = ({ session }) => {
+const Account = ({ session }:{session:Session}) => {
   const [loading, setLoading] = useState(true)
-  const [username, setUsername] = useState(null)
+  const [username, setUsername] = useState<any>(null)
   const [avatar_url, setAvatarUrl] = useState(null)
 
   useEffect(() => {
@@ -29,14 +30,14 @@ const Account = ({ session }) => {
         setUsername(data.username)
         setAvatarUrl(data.avatar_url)
       }
-    } catch (error) {
-      alert(error.message)
+    } catch (error:any) {
+      alert(error["message"])
     } finally {
       setLoading(false)
     }
   }
 
-  const updateProfile = async (e) => {
+  const updateProfile = async (e:any) => {
     e.preventDefault()
 
     try {
@@ -44,7 +45,7 @@ const Account = ({ session }) => {
       const user = supabase.auth.user()
 
       const updates = {
-        id: user.id,
+        id: user?.id,
         username,
         avatar_url,
         updated_at: new Date(),
@@ -57,8 +58,8 @@ const Account = ({ session }) => {
       if (error) {
         throw error
       }
-    } catch (error) {
-      alert(error.message)
+    } catch (error:any) {
+      alert(error["message"])
     } finally {
       setLoading(false)
     }
@@ -70,14 +71,14 @@ const Account = ({ session }) => {
         'Saving ...'
       ) : (
         <form onSubmit={updateProfile} className="form-widget">
-          <div>Email: {session.user.email}</div>
+          <div>Email: {session?.user?.email}</div>
           <div>
             <label htmlFor="username">Name</label>
             <input
               id="username"
               type="text"
               value={username || ''}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e?.target?.value)}
             />
           </div>
           <div>
