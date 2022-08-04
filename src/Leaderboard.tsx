@@ -16,21 +16,21 @@ function PlayerSelector({ players, onChange, label }: { players: Player[], onCha
         </div>
     )
 }
-type Player={name:string,id:number}
-type Match={winner1:Player,winner2:Player,loser1:Player,loser2:Player,inserted_at:string,id:number}
+type Player = { name: string, id: number }
+type Match = { winner1: Player, winner2: Player, loser1: Player, loser2: Player, inserted_at: string, id: number }
 
 export default function Leaderboard() {
     const [players, setPlayers] = useState<Player[]>([])
     const [playerName, setPlayerName] = useState("")
     const [matches, setMatches] = useState<Match[]>([])
     const [name, setName] = useState("")
-    const id = useParams().id||0;
+    const id = useParams().id || 0;
 
 
 
 
     useEffect(() => {
-        supabase.from<{ name: string, players:Player[] ,matches:Match[],id:number}>('leaderboards').select(`
+        supabase.from<{ name: string, players: Player[], matches: Match[], id: number }>('leaderboards').select(`
             name,
             players(name,id),
             matches(winner1(name,id),winner2(name,id),loser1(name,id),loser2(name,id),id,inserted_at)
@@ -56,18 +56,18 @@ export default function Leaderboard() {
     //console.log(scores)
     for (const match of matches.sort((a, b) => new Date(a.inserted_at).getTime() - new Date(b.inserted_at).getTime())) {
         //console.log(match)
-        const winner1Score = scores.get(match.winner1.id)||1000
-        const winner2Score = scores.get(match.winner2.id)||1000
-        const loser1Score = scores.get(match.loser1.id)||1000
-        const loser2Score = scores.get(match.loser2.id)||1000
-        const scoreDiff = ((winner1Score - loser1Score) + (winner2Score - loser2Score))/2
+        const winner1Score = scores.get(match.winner1.id) || 1000
+        const winner2Score = scores.get(match.winner2.id) || 1000
+        const loser1Score = scores.get(match.loser1.id) || 1000
+        const loser2Score = scores.get(match.loser2.id) || 1000
+        const scoreDiff = ((winner1Score - loser1Score) + (winner2Score - loser2Score)) / 2
         const winnProbability = 1 / (1 + Math.pow(10, -scoreDiff / 400))
         console.log(winnProbability)
         const update = 30 * (1 - winnProbability)
         scores.set(match.winner1.id, winner1Score + 30 * (1 - winnProbability))
         scores.set(match.winner2.id, winner2Score + 30 * (1 - winnProbability))
-        scores.set(match.loser1.id, loser1Score - 30 * winnProbability)
-        scores.set(match.loser2.id, loser2Score - 30 * winnProbability)
+        scores.set(match.loser1.id, loser1Score - 30 * (1 - winnProbability))
+        scores.set(match.loser2.id, loser2Score - 30 * (1 - winnProbability))
         console.log(scoreDiff)
     }
 
@@ -78,7 +78,9 @@ export default function Leaderboard() {
             <h2>Players:</h2>
             {
                 players.map(player => (
-                    <p>{player.name}:{scores.get(player.id)}</p>
+                    <p>{player.name}:{scores.get(player.id)} <button onClick={async () => {
+                        await supabase.from("players").delete().eq('id', player.id).eq("leaderboard",id)
+                    }}>Delete</button></p>
                 )
                 )
             }
