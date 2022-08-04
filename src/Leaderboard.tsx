@@ -23,7 +23,7 @@ type Player = { name: string, id: number }
 type Match = { winners: number[], losers: number[], inserted_at: string, id: number }
 
 export default function Leaderboard() {
-    const navigate=useNavigate()
+    const navigate = useNavigate()
     const [players, setPlayers] = useState<Player[]>([])
     const [playerName, setPlayerName] = useState("")
     const [m, setMatches] = useState<Match[]>([])
@@ -58,7 +58,9 @@ export default function Leaderboard() {
         return <Loading size="md" />
     const scores = new Map<number, number>(players.map(p => [p.id, 1000]))
     const matches = m.map(m => ({ ...m, inserted_at: new Date(m.inserted_at) }))
-    matches.sort((b, a) => (a.inserted_at).getTime() - (b.inserted_at).getTime())
+
+    //sort last to first
+    matches.sort((a, b) => (a.inserted_at).getTime() - (b.inserted_at).getTime())
     const matchScores: number[] = []
     //console.log(scores)
     for (const match of matches) {
@@ -77,7 +79,7 @@ export default function Leaderboard() {
             scores.set(match.losers[i], loserScores[i] - update)
         }
     }
-
+    matchScores.reverse()
     players.sort((a, b) => (scores.get(b.id) || 1000) - (scores.get(a.id) || 1000))
 
     return (
@@ -165,7 +167,7 @@ export default function Leaderboard() {
                     <Table.Column>Actions</Table.Column>
                 </Table.Header>
                 <Table.Body>
-                    {matches.map((match, i) => (
+                    {Array.from(matches).reverse().map((match, i) => (
                         <Table.Row>
                             <Table.Cell>{match.winners.map(w => players.find(p => p.id == w)?.name).join(", ")}</Table.Cell>
                             <Table.Cell>{match.losers.map(w => players.find(p => p.id == w)?.name).join(", ")}</Table.Cell>
