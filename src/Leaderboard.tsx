@@ -133,18 +133,19 @@ export default function Leaderboard() {
                 }}>Add Player</Button>
             <h2>Add match result</h2>
             <p>Winners: <TagPicker
-                style={{zIndex:1000}}
-                onChange={(v: string[]) => setWinners(v.map(v => parseInt(v)))}
+                style={{ zIndex: 2000 }}
+                onChange={(v: string[]) => setWinners((v||[]).map(v => parseInt(v)))}
                 data={players.map(p => ({ label: p.name, value: p.id }))}
             />
             </p>
             <p>Losers: <TagPicker
-                style={{zIndex:1000}}
-                onChange={(v: string[]) => setLosers(v.map(v => parseInt(v)))}
+                style={{ zIndex: 1000 }}
+                onChange={(v: string[]) => setLosers((v || []).map(v => parseInt(v)))}
                 data={players.map(p => ({ label: p.name, value: p.id }))}
             />
             </p>
             <Button
+                disabled={winners.length === 0 || losers.length === 0}
                 style={{ margin: "auto" }} onClick={async () => {
                     await supabase.from("matches").insert({
                         winners: winners,
