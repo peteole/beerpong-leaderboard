@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "./client";
 import { Button, Input, Loading, Table, Tooltip } from "@nextui-org/react";
 import { TagPicker } from 'rsuite';
@@ -23,6 +23,7 @@ type Player = { name: string, id: number }
 type Match = { winners: number[], losers: number[], inserted_at: string, id: number }
 
 export default function Leaderboard() {
+    const navigate=useNavigate()
     const [players, setPlayers] = useState<Player[]>([])
     const [playerName, setPlayerName] = useState("")
     const [m, setMatches] = useState<Match[]>([])
@@ -149,7 +150,7 @@ export default function Leaderboard() {
                     )
                     increase()
                 }}>Add match</Button>
-            <h2 style={{marginTop:50}}>Matches</h2>
+            <h2 style={{ marginTop: 50 }}>Matches</h2>
             <Table
                 aria-label="Example table with static content"
                 css={{
@@ -188,6 +189,13 @@ export default function Leaderboard() {
                     ))}
                 </Table.Body>
             </Table>
+            <Button
+                color="warning"
+                style={{ margin: "auto" }}
+                onClick={async () => {
+                    await supabase.from("leaderboards").delete().eq("id", id)
+                    navigate("/")
+                }}>Delete leaderboard</Button>
         </div>
     )
 }

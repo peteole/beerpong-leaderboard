@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "./client"
 import { Outlet, Link } from "react-router-dom";
+import { Button, Input } from "@nextui-org/react";
 
 export default function Home() {
     const [leaderboards, setLeaderboards] = useState<{ id: number, name: string }[]>([])
@@ -22,11 +23,11 @@ export default function Home() {
                 )
             }
             <h2>Create leaderboard</h2>
-            <input onChange={e => setLeaderboardName(e.target.value)} />
-            <button onClick={async () => {
+            <Input onChange={e => setLeaderboardName(e.target.value)} placeholder="New leaderboard name"/>
+            <Button style={{margin:"auto",marginTop:20}} onClick={async () => {
                 await supabase.from("leaderboards").insert({ name: leaderboardName })
             }
-            }>Create</button>
+            }>Create</Button>
 
         </div>)
 }
