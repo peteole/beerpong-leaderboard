@@ -4,6 +4,7 @@ import { supabase } from "./client";
 import { Button, Input, Loading, Table, Tooltip } from "@nextui-org/react";
 import { TagPicker } from 'rsuite';
 import "./leaderboard.css"
+import { TiPlus } from "react-icons/ti"
 
 function PlayerSelector({ players, onChange, label }: { players: Player[], onChange: (player: number) => void, label: string }) {
     return (
@@ -23,6 +24,7 @@ type Player = { name: string, id: number }
 type Match = { winners: number[], losers: number[], inserted_at: string, id: number }
 
 export default function Leaderboard() {
+    const authenticated = supabase.auth.user !== null
     const navigate = useNavigate()
     const [players, setPlayers] = useState<Player[]>([])
     const [playerName, setPlayerName] = useState("")
@@ -36,6 +38,8 @@ export default function Leaderboard() {
 
     const [winners, setWinners] = useState<number[]>([])
     const [losers, setLosers] = useState<number[]>([])
+    const [editors, setEditors] = useState<{ email: string, leaderboard: number }[]>([])
+    const [newEditorEmail, setNewEditorEmail] = useState("")
 
 
     useEffect(() => {
@@ -51,6 +55,10 @@ export default function Leaderboard() {
             setMatches(leaderboard.data[0].matches)
             setIsLoading(false)
             //setPlayers(leaderboard?.data)
+        })
+        supabase.from<{ email: string, leaderboard: number }>("leaderboard_editors").select("email,leaderboard").eq("leaderboard", id).then(editors => {
+            if (editors.data)
+                setEditors(editors.data)
         })
     }, [version])
 
@@ -122,19 +130,21 @@ export default function Leaderboard() {
             </Table>
             <h2>Add player</h2>
             <p>
-                <Input onChange={e => setPlayerName(e.target.value)} placeholder="New player name" />
+                <Input onChange={e => setPlayerName(e.target.value)} placeholder="New player name"
+                    contentClickable
+                    clearable
+                    contentRight={<TiPlus />}
+                    onContentClick={async (p, e) => {
+                        await supabase.from("players").insert({ name: playerName, leaderboard: id })
+                        increase()
+                    }}
+                />
 
             </p>
-            <Button
-                style={{ margin: "auto" }}
-                onClick={async () => {
-                    await supabase.from("players").insert({ name: playerName, leaderboard: id })
-                    increase()
-                }}>Add Player</Button>
             <h2>Add match result</h2>
             <p>Winners: <TagPicker
                 style={{ zIndex: 2000 }}
-                onChange={(v: string[]) => setWinners((v||[]).map(v => parseInt(v)))}
+                onChange={(v: string[]) => setWinners((v || []).map(v => parseInt(v)))}
                 data={players.map(p => ({ label: p.name, value: p.id }))}
             />
             </p>
@@ -192,6 +202,53 @@ export default function Leaderboard() {
                             </Table.Cell>
                         </Table.Row>
                     ))}
+                </Table.Body>
+            </Table>
+            <h2>Manage editors</h2>
+            <p>
+                <Input onChange={e => setNewEditorEmail(e.target.value)} placeholder="Editor email"
+                    contentClickable
+                    clearable
+                    contentRight={<TiPlus />}
+                    onContentClick={async (p, e) => {
+                        await supabase.from("leaderboard_editors").insert({ email: newEditorEmail, leaderboard: id })
+                        increase()
+                    }}
+                />
+
+            </p>
+            <Table
+                aria-label="Editors"
+                css={{
+                    height: "auto",
+                    minWidth: "100%",
+                }}>
+                <Table.Header>
+                    <Table.Column>Email</Table.Column>
+                    <Table.Column>Delete</Table.Column>
+                </Table.Header>
+                <Table.Body>
+                    {
+                        editors.map(e => (
+                            <Table.Row>
+                                <Table.Cell>{e.email}</Table.Cell>
+                                <Table.Cell>
+                                    <Tooltip
+                                        content="Delete editor"
+                                        color="error"
+                                        onClick={async () => {
+                                            await supabase.from('leaderboard_editors').delete().eq('email', e.email)
+                                            increase()
+                                        }}
+                                    >
+                                        <IconButton>
+                                            <DeleteIcon size={20} fill="#FF0080" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Table.Cell>
+                            </Table.Row>)
+                        )
+                    }
                 </Table.Body>
             </Table>
             <Button
