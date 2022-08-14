@@ -5,7 +5,6 @@ import { supabase } from './client'
 const Account = ({ session }:{session:Session}) => {
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState<any>(null)
-  const [avatar_url, setAvatarUrl] = useState(null)
 
   useEffect(() => {
     getProfile()
@@ -18,7 +17,7 @@ const Account = ({ session }:{session:Session}) => {
 
       let { data, error, status } = await supabase
         .from('profiles')
-        .select(`username, website, avatar_url`)
+        .select(`username`)
         .eq('id', user?.id)
         .single()
 
@@ -28,7 +27,6 @@ const Account = ({ session }:{session:Session}) => {
 
       if (data) {
         setUsername(data.username)
-        setAvatarUrl(data.avatar_url)
       }
     } catch (error:any) {
       alert(error["message"])
@@ -47,7 +45,6 @@ const Account = ({ session }:{session:Session}) => {
       const updates = {
         id: user?.id,
         username,
-        avatar_url,
         updated_at: new Date(),
       }
 
